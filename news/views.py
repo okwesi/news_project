@@ -5,8 +5,29 @@ from django.views import generic
 from django.shortcuts import redirect, render
 from .models import News
 import requests
+from django.core.mail import send_mail
+from newsProject.settings import EMAIL_HOST_USER
+from django.contrib.auth.decorators import login_required
 
 count = News.objects.count()
+
+
+def sendMail(request):
+    
+    if request.method == "POST":
+        message =  request.POST['message']
+        subject1 = request.POST['subject']
+        email = request.POST['email']
+        subject = (f" {subject1}   {email}")
+        send_mail(
+        subject,
+        message,       
+        email,
+        [EMAIL_HOST_USER],
+        fail_silently=False,
+        )   
+
+    return redirect('contact')
 
 
 class HomeNews(generic.ListView):
@@ -14,9 +35,7 @@ class HomeNews(generic.ListView):
     context_object_name = 'news'
     paginate_by = int(count/6) 
     model = News
-    print(count)
-    def get_queryset(self):
-        return News.objects.order_by('?')
+    
 
     def get_queryset(self):
         query = self.request.GET.get('search')
@@ -26,11 +45,11 @@ class HomeNews(generic.ListView):
             object_list = self.model.objects.order_by('-datetime')
         return object_list
 
-
+@login_required
 def save(request):
     all_news = {}
-    response = requests.get(f'https://saurav.tech/NewsAPI/top-headlines/category/technology/in.json')
-    newsdata = response.json()
+    newsresponse = requests.get(f'https://saurav.tech/NewsAPI/top-headlines/category/technology/in.json')
+    newsdata = newsresponse.json()
     news = newsdata['articles']
 
     for i in news:
@@ -46,7 +65,7 @@ def save(request):
             category= 'technology'
         )
         news_data.save()
-        all_news = News.objects.all().order_by('?')
+        all_news = News.objects.all().order_by('-datetime')
 
     url = "https://free-news.p.rapidapi.com/v1/search"
     querystring = {"q":"hacking","lang":"en"}
@@ -54,8 +73,8 @@ def save(request):
         'x-rapidapi-host': "free-news.p.rapidapi.com",
         'x-rapidapi-key': "11bed60f33msh9bc53743f06ae92p11fd8ajsn8349ac59142e"
         }
-    response = requests.request("GET", url, headers=headers, params=querystring)
-    hackingdata = response.json()
+    hackingresponse = requests.request("GET", url, headers=headers, params=querystring)
+    hackingdata = hackingresponse.json()
     hackingnews = hackingdata['articles']
 
     for i in hackingnews:
@@ -68,7 +87,7 @@ def save(request):
             category= 'hacking'
         )
         news_data.save()
-        all_news = News.objects.all().order_by('?')
+        all_news = News.objects.all().order_by('-datetime')
 
 
 
@@ -80,8 +99,8 @@ def save(request):
         'x-rapidapi-host': "news-search4.p.rapidapi.com",
         'x-rapidapi-key': "11bed60f33msh9bc53743f06ae92p11fd8ajsn8349ac59142e"
         }
-    response = requests.request("POST", url, data=payload, headers=headers)
-    programmingdata = response.json()
+    programmingresponse = requests.request("POST", url, data=payload, headers=headers)
+    programmingdata = programmingresponse.json()
     programmingnews = programmingdata['response']
 
     for i in programmingnews:
@@ -94,7 +113,7 @@ def save(request):
             category= 'programming'
         )
         news_data.save()
-        all_news = News.objects.all().order_by('?')
+        all_news = News.objects.all().order_by('-datetime')
 
 
     return  redirect('home')
@@ -142,6 +161,24 @@ class Programming(generic.ListView):
     
     def get_queryset(self):
         return News.objects.filter(category__contains='programming')
+
+
+@login_required
+# delete all objects in database
+def delete(request):
+    model = News
+    object_list = model.objects.all()
+    object_list.delete()
+    # redirects to save function
+    return redirect('save')
+
+
+
+
+def contact(request):
+    all={}
+    return render(request,'contact.html', all)
+
 
 
 # url = "https://saurav.tech/NewsAPI/top-headlines/category/health/in.json"
