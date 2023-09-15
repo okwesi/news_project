@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-u!omy%*+hob7fibxf@c$d(=wys8*$)mh*no2dz5r4pu8e&0t@@
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhot', '127.0.0.1', '192.168.0.30', 'inspired-amazing-spaniel.ngrok-free.app']
 
 
 # Application definition
@@ -142,3 +142,26 @@ CRISPY_TEMPLATE_PACK = 'bootstrap4'
 LOGIN_REDIRECT_URL = 'home'
 LOGIN_URL = 'login'
 LOGOUT_REDIRECT_URL = 'home'
+
+
+# set the celery broker url
+CELERY_BROKER_URL = 'redis://localhost:6379/0'
+# set the celery result backend
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+  
+# set the celery timezone
+CELERY_TIMEZONE = 'UTC'
+from celery.schedules import crontab
+from datetime import datetime
+
+CELERY_BEAT_SCHEDULE = { # scheduler configuration 
+    'Task_one_schedule' : {  # whatever the name you want 
+        'task': 'news.tasks.task_one', # name of task with path
+        'schedule': crontab(), # crontab() runs the tasks every minute
+    },
+    'Task_two_schedule' : {  # whatever the name you want 
+        'task': 'news.tasks.task_two', # name of task with path
+        'schedule': 5, # 30 runs this task every 30 seconds
+        'args' : {datetime.now()} # arguments for the task
+    },
+}

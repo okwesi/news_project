@@ -133,6 +133,10 @@ def hacking(request):
     all = {
         'hacking': hackingnews
         }
+    
+    
+    from .tasks import add
+    add.apply_async((2, 3), countdown=5)
     return render(request, 'hacking.html', all)
 
 
